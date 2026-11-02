@@ -1,0 +1,18 @@
+import { chromium } from '@playwright/test';
+import fs from 'node:fs';
+fs.mkdirSync('artifacts', { recursive: true });
+const browser = await chromium.launch({executablePath:'/usr/bin/chromium',headless:true,args:['--no-sandbox','--enable-unsafe-swiftshader','--use-angle=swiftshader','--disable-dev-shm-usage']});
+const page = await browser.newPage({viewport:{width:1440,height:900}});
+page.on('console', m => { if(['warning','error'].includes(m.type())) console.log(m.type(),m.text()); });
+page.on('pageerror', e=>console.log('PAGEERROR',e.message));
+await page.goto('http://127.0.0.1:5173/?test=1');
+await page.waitForFunction(()=>window.__DUSKLINE__,{},{timeout:90000});
+await page.waitForTimeout(1500);
+await page.screenshot({path:'artifacts/menu.png'});
+console.log('MENU',await page.evaluate(()=>window.__DUSKLINE__.snapshot()));
+console.log('BUTTONS',await page.getByRole('button').allTextContents());
+await page.getByRole('button',{name:/start mission/i}).click();
+await page.waitForTimeout(1500);
+console.log('GAME',await page.evaluate(()=>window.__DUSKLINE__.snapshot()));
+await page.screenshot({path:'artifacts/game.png'});
+await browser.close();
